@@ -1,7 +1,7 @@
 # distutils: language = c++
 # distutils: sources = src/graph.cpp src/alignment_engine.cpp
 
-cimport cspoa
+from spoapy cimport cspoa
 from libc.stdint cimport int8_t, uint8_t, int32_t, uint32_t
 from libcpp cimport bool
 from libcpp.vector cimport vector
@@ -15,6 +15,9 @@ cpdef enum AlignmentType:
     SmithWaterman = cspoa.AlignmentType.kSW
     NeedlemanWunsch = cspoa.AlignmentType.kNW
     Overlap = cspoa.AlignmentType.kOV
+    SW = cspoa.AlignmentType.kSW
+    NW = cspoa.AlignmentType.kNW
+    OV = cspoa.AlignmentType.kOV
 
 
 cpdef enum AlignmentSubtype:
@@ -81,6 +84,12 @@ cdef class Graph:
         cdef Graph self = Graph.__new__(Graph)
         self._c_graph = cspoa.move(graph)
         return self
+
+    def __len__(self):
+        """
+        Returns the number of nodes.
+        """
+        return self._c_graph.get().nodes().size()
 
     def __cinit__(self):
         self._c_graph = cspoa.createGraph()
@@ -155,7 +164,6 @@ cdef class Graph:
 
         cdef vector[string] dst
         self._c_graph.get().generate_multiple_sequence_alignment(dst, include_consensus)
-        print('Generated MSA')
         n = dst.size()
         return [dst.at(i) for i in range(n)]
 
@@ -200,6 +208,12 @@ cdef class Graph:
     #     cdef vector[int32_t] subgraph_to_graph
     #     cdef Graph subgraph = Graph._init(self._c_graph.get().subgraph(start_node_id, end_node_id, subgraph_to_graph))
     #     return subgraph, subgraph_to_graph
+
+    def print_dot(self, path):
+        self._c_graph.get().print_dot(<string>path.encode('utf-8'))
+
+    def clear(self):
+        self._c_graph.get().clear()
 
 
 def __pri_ctor(self):

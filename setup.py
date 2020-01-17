@@ -11,13 +11,14 @@ try:
 except ValueError:
     pass
 
-setup(name='Python wrapper around SIMD partial order alignment library',
+setup(name='spoapy',
+    description='Python wrapper around the SIMD partial order alignment library',
     ext_modules=cythonize([Extension(
-        'spoapy',
-        sources=['spoapy/spoapy.pyx'] + sources,
+        'spoapy.core',
+        sources=['spoapy/core.pyx'] + sources,
         include_dirs=['include/', 'include/spoa', 'src'],
         language='c++',
         extra_compile_args=['-std=c++11'],
-        extra_link_args=['-std=c++11']
+        extra_link_args=['-std=c++11'],
     )],
     compiler_directives={'language_level' : sys.version_info[0]}))
