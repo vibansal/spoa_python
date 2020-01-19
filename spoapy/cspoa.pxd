@@ -1,4 +1,4 @@
-from libc.stdint cimport int8_t, uint8_t, int32_t, uint32_t
+from libc.stdint cimport int8_t, uint8_t, int32_t, uint32_t, int64_t
 from libcpp cimport bool
 from libcpp.vector cimport vector
 from libcpp.memory cimport unique_ptr, shared_ptr
@@ -23,6 +23,7 @@ cdef extern from 'graph.hpp' namespace 'spoa':
     cdef cppclass Edge:
         uint32_t begin_node_id()
         uint32_t end_node_id()
+        int64_t weight()
 
     cdef cppclass Graph:
         vector[unique_ptr[Node]]& nodes()
@@ -42,6 +43,7 @@ cdef extern from 'graph.hpp' namespace 'spoa':
             vector[int32_t]& subgraph_to_graph_mapping)
         void update_alignment(Alignment& alignment, vector[int32_t]& subgraph_to_graph_mapping)
         void print_dot(string& path)
+        vector[shared_ptr[Edge]] consensus_edges()
         void clear()
 
 

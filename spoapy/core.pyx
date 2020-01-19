@@ -70,11 +70,6 @@ cdef class AlignmentEngine:
     def preallocate(self, uint32_t max_sequence_size, uint32_t alphabet_size):
         self._c_aln_engine.get().prealloc(max_sequence_size, alphabet_size)
 
-    # def align(self, sequence, Graph graph):
-    #     cdef unique_ptr[cspoa.Alignment] aln_ptr = unique_ptr[cspoa.Alignment](new cspoa.Alignment(
-    #         self._c_aln_engine.get().align(seq_to_cstr(sequence), graph._c_graph)))
-    #     return Alignment._init(cspoa.move(aln_ptr))
-
 
 cdef class Graph:
     cdef unique_ptr[cspoa.Graph] _c_graph
@@ -113,9 +108,35 @@ cdef class Graph:
     def decoder(self, uint8_t code):
         return self._c_graph.get().decoder(code)
 
+    def align(self, AlignmentEngine engine, sequence):
+        cdef unique_ptr[cspoa.Alignment] aln_ptr = unique_ptr[cspoa.Alignment](
+            new cspoa.Alignment(engine._c_aln_engine.get().align(seq_to_cstr(sequence), self._c_graph)))
+        return Alignment._init(cspoa.move(aln_ptr))
+
+    def add_alignment(self, Alignment alignment, sequence, weight=1):
+        """
+        Adds an alignment to the graph.
+
+        Parameters
+        ----------
+        alignment: Alignment
+        sequence: bytes or str
+        weight: int or list[int]
+            default: 1
+            Weight of the sequence (single number) or weight of each individual letter (same length as the sequence).
+        """
+        cdef string cstr = seq_to_cstr(sequence)
+        try:
+            assert len(weight) == len(sequence)
+        except TypeError:
+            return self._c_graph.get().add_alignment(dereference(alignment._c_vec.get()), cstr, <uint32_t>weight)
+
+        cdef vector[uint32_t] weights = weight
+        return self._c_graph.get().add_alignment(dereference(alignment._c_vec.get()), cstr, weights)
+
     def add_sequence(self, AlignmentEngine engine, sequence, weight=1):
         """
-        Adds a sequence to the graph.
+        Aligns the sequence and adds it to the graph. Same as calling `align` and `add_alignment`.
 
         Parameters
         ----------
@@ -135,27 +156,6 @@ cdef class Graph:
 
         cdef vector[uint32_t] weights = weight
         return self._c_graph.get().add_alignment(alignment, cstr, weights)
-
-    # def add_alignment(self, Alignment alignment, sequence, weight=1):
-    #     """
-    #     Adds an alignment to the graph.
-
-    #     Parameters
-    #     ----------
-    #     alignment: Alignment
-    #     sequence: bytes or str
-    #     weight: int or list[int]
-    #         default: 1
-    #         Weight of the sequence (single number) or weight of each individual letter (same length as the sequence).
-    #     """
-    #     cdef string cstr = seq_to_cstr(sequence)
-    #     try:
-    #         assert len(weight) == len(sequence)
-    #     except TypeError:
-    #         return self._c_graph.get().add_alignment(dereference(alignment._c_vec.get()), cstr, <uint32_t>weight)
-
-    #     cdef vector[uint32_t] weights = weight
-    #     return self._c_graph.get().add_alignment(dereference(alignment._c_vec.get()), cstr, weights)
 
     def generate_msa(self, bool include_consensus=False):
         """
@@ -212,6 +212,14 @@ cdef class Graph:
     def print_dot(self, path):
         self._c_graph.get().print_dot(<string>path.encode('utf-8'))
 
+    def consensus_edges(self):
+        """
+        Returns consensus and the a of edges.
+        """
+        consensus = self._c_graph.get().generate_consensus()
+        cdef vector[shared_ptr[cspoa.Edge]] edges = self._c_graph.get().consensus_edges()
+        return consensus, [Edge._init(edges.at(i)) for i in range(edges.size())]
+
     def clear(self):
         self._c_graph.get().clear()
 
@@ -229,7 +237,7 @@ cdef class Node:
         self._c_node = node
         return self
 
-    def __cinit__(self):
+    def __init__(self):
         __pri_ctor(self)
 
     def id(self):
@@ -264,40 +272,43 @@ cdef class Edge:
         self._c_edge = edge
         return self
 
-    def __cinit__(self):
+    def __init__(self):
         __pri_ctor(self)
 
     def start_node_id(self):
-        self._c_edge.get().begin_node_id()
+        return self._c_edge.get().begin_node_id()
 
     def end_node_id(self):
-        self._c_edge.get().end_node_id()
+        return self._c_edge.get().end_node_id()
+
+    def weight(self):
+        return self._c_edge.get().weight()
 
 
 # All types of vectors below.
 
 
-# cdef class Alignment:
-#     cdef unique_ptr[cspoa.Alignment] _c_vec
+cdef class Alignment:
+    cdef unique_ptr[cspoa.Alignment] _c_vec
 
-#     @staticmethod
-#     cdef _init(unique_ptr[cspoa.Alignment] vec):
-#         cdef Alignment self = Alignment.__new__(Alignment)
-#         self._c_vec = cspoa.move(vec)
-#         return self
+    @staticmethod
+    cdef _init(unique_ptr[cspoa.Alignment] vec):
+        cdef Alignment self = Alignment.__new__(Alignment)
+        self._c_vec = cspoa.move(vec)
+        return self
 
-#     def __cinit__(self):
-#         __pri_ctor(self)
+    def __init__(self):
+        __pri_ctor(self)
 
-#     def __len__(self):
-#         return self._c_vec.get().size()
+    def __len__(self):
+        return self._c_vec.get().size()
 
-#     def __getitem__(self, size_t index):
-#         return self._c_vec.get().at(index)
+    def __getitem__(self, size_t index):
+        return self._c_vec.get().at(index)
 
-#     def __iter__(self):
-#         for i in range(len(self)):
-#             yield self[i]
+    def __iter__(self):
+        for i in range(len(self)):
+            yield self[i]
 
 
 cdef class IntVector:
@@ -309,7 +320,7 @@ cdef class IntVector:
         self._c_vec = vec
         return self
 
-    def __cinit__(self):
+    def __init__(self):
         __pri_ctor(self)
 
     def __len__(self):
@@ -332,7 +343,7 @@ cdef class NodeVector:
         self._c_vec = vec
         return self
 
-    def __cinit__(self):
+    def __init__(self):
         __pri_ctor(self)
 
     def __len__(self):
@@ -355,7 +366,7 @@ cdef class EdgeVector:
         self._c_vec = vec
         return self
 
-    def __cinit__(self):
+    def __init__(self):
         __pri_ctor(self)
 
     def __len__(self):

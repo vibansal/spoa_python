@@ -83,6 +83,8 @@ public:
 
     void print_dot(const std::string& path) const;
 
+    std::vector<std::shared_ptr<Edge>> consensus_edges() const;
+
     void clear();
 
     friend std::unique_ptr<Graph> createGraph();
@@ -184,6 +186,10 @@ public:
 
     std::uint32_t end_node_id() const {
         return end_node_id_;
+    }
+
+    std::int64_t weight() const {
+        return total_weight_;
     }
 
     friend Graph;

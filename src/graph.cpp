@@ -725,6 +725,22 @@ void Graph::print_dot(const std::string& path) const {
     out.close();
 }
 
+std::vector<std::shared_ptr<Edge>> Graph::consensus_edges() const {
+    std::vector<std::shared_ptr<Edge>> consensus_edges;
+    for (std::uint32_t i = 1; i < consensus_.size(); ++i) {
+        auto node_id = consensus_[i - 1];
+        auto next_id = consensus_[i];
+
+        for (const auto& edge: nodes_[node_id]->out_edges_) {
+            if (edge->end_node_id_ == next_id) {
+                consensus_edges.push_back(edge);
+                break;
+            }
+        }
+    }
+    return consensus_edges;
+}
+
 void Graph::clear() {
     std::fill(coder_.begin(), coder_.end(), -1);
     std::fill(decoder_.begin(), decoder_.end(), -1);
