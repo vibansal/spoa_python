@@ -111,7 +111,7 @@ cdef class Graph:
     def update_edge(self, start_node_id, end_node_id, weight):
             return self._c_graph.get().update_edge(<uint32_t>start_node_id, <uint32_t>end_node_id, <int32_t>weight)
 
-    def get_path_weights(self, n,nodes):
+    def get_path_weights(self, n, nodes):
          cdef vector[uint32_t] nodes_v = nodes
          return self._c_graph.get().get_path_weights(<uint32_t>n, nodes_v)
 
@@ -119,7 +119,6 @@ cdef class Graph:
         cdef unique_ptr[cspoa.Alignment] aln_ptr = unique_ptr[cspoa.Alignment](
             new cspoa.Alignment(engine._c_aln_engine.get().align(seq_to_cstr(sequence), self._c_graph)))
         return Alignment._init(cspoa.move(aln_ptr))
-
 
     def add_alignment(self, Alignment alignment, sequence, weight=1):
         """
@@ -321,6 +320,21 @@ cdef class Alignment:
         for i in range(len(self)):
             yield self[i]
 
+    @staticmethod
+    def from_pairs(pairs):
+        cdef Alignment self = Alignment.__new__(Alignment)
+        self._c_vec = unique_ptr[cspoa.Alignment](new cspoa.Alignment())
+        for x, y in pairs:
+            z = pair[uint32_t, uint32_t](x, y)
+            self._c_vec.get().push_back(z)
+        return self
+
+    def __str__(self):
+        res = 'Alignment['
+        res += ', '.join('(%d,%d)' % (x, y) for x, y in self)
+        res += ']'
+        return res
+
 
 cdef class IntVector:
     cdef const vector[uint32_t]* _c_vec
@@ -391,4 +405,4 @@ cdef class EdgeVector:
             yield self[i]
 
 
-__all__ = ['AlignmentEngine', 'Graph', 'AlignmentType', 'AlignmentSubtype']
+__all__ = ['AlignmentEngine', 'Graph', 'AlignmentType', 'AlignmentSubtype', 'Alignment']
