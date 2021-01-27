@@ -81,6 +81,10 @@ public:
     void update_alignment(Alignment& alignment,
         const std::vector<std::int32_t>& subgraph_to_graph_mapping) const;
 
+    std::uint32_t update_edge(std::uint32_t begin_node_id, std::uint32_t end_node_id,
+        std::int32_t weight);
+    std::vector<std::uint32_t> get_path_weights(std::uint32_t sequence_size, std::vector<std::uint32_t>& nodes);
+
     void print_dot(const std::string& path) const;
 
     std::vector<std::shared_ptr<Edge>> consensus_edges() const;
@@ -191,6 +195,13 @@ public:
     std::int64_t weight() const {
         return total_weight_;
     }
+    
+    std::int64_t pweight() const {
+        return total_pweight_;
+    }
+    std::vector<std::uint32_t> labels() const {
+        return sequence_labels_;
+    }
 
     friend Graph;
     friend Node;
@@ -207,6 +218,7 @@ private:
     std::uint32_t end_node_id_;
     std::vector<std::uint32_t> sequence_labels_;
     std::int64_t total_weight_;
+    std::int64_t total_pweight_;
 };
 
 }
