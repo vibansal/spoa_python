@@ -108,10 +108,18 @@ cdef class Graph:
     def decoder(self, uint8_t code):
         return self._c_graph.get().decoder(code)
 
+    def update_edge(self, start_node_id, end_node_id, weight):
+            return self._c_graph.get().update_edge(<uint32_t>start_node_id, <uint32_t>end_node_id, <int32_t>weight)
+
+    def get_path_weights(self, n,nodes):
+         cdef vector[uint32_t] nodes_v = nodes
+         return self._c_graph.get().get_path_weights(<uint32_t>n, nodes_v)
+
     def align(self, AlignmentEngine engine, sequence):
         cdef unique_ptr[cspoa.Alignment] aln_ptr = unique_ptr[cspoa.Alignment](
             new cspoa.Alignment(engine._c_aln_engine.get().align(seq_to_cstr(sequence), self._c_graph)))
         return Alignment._init(cspoa.move(aln_ptr))
+
 
     def add_alignment(self, Alignment alignment, sequence, weight=1):
         """
@@ -283,6 +291,9 @@ cdef class Edge:
 
     def weight(self):
         return self._c_edge.get().weight()
+
+    def labels(self):
+        return self._c_edge.get().labels()
 
 
 # All types of vectors below.

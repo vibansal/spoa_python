@@ -24,6 +24,7 @@ cdef extern from 'graph.hpp' namespace 'spoa':
         uint32_t begin_node_id()
         uint32_t end_node_id()
         int64_t weight()
+        vector[uint32_t]& labels()
 
     cdef cppclass Graph:
         vector[unique_ptr[Node]]& nodes()
@@ -34,6 +35,8 @@ cdef extern from 'graph.hpp' namespace 'spoa':
 
         void add_alignment(Alignment& alignment, string& sequence, uint32_t weight)
         void add_alignment(Alignment& alignment, string& sequence, vector[uint32_t]& weights)
+        uint32_t update_edge(uint32_t start_node_id, uint32_t end_node_id, int32_t weight)
+        vector[uint32_t] get_path_weights(uint32_t n, vector[uint32_t]& nodes)
 
         void generate_multiple_sequence_alignment(vector[string]& dst, bool include_consensus)
         string generate_consensus()

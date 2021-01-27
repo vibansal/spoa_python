@@ -75,7 +75,9 @@ Edge::~Edge() {
 void Edge::add_sequence(std::uint32_t label, std::uint32_t weight) {
     sequence_labels_.emplace_back(label);
     total_weight_ += weight;
+    total_pweight_ += 1;
 }
+
 
 std::unique_ptr<Graph> createGraph() {
     return std::unique_ptr<Graph>(new Graph());
@@ -94,6 +96,42 @@ std::uint32_t Graph::add_node(std::uint32_t code) {
     std::uint32_t node_id = nodes_.size();
     nodes_.emplace_back(createNode(node_id, code));
     return node_id;
+}
+
+
+// new function added, Vikas Bansal, jan 2021
+std::vector<std::uint32_t> Graph::get_path_weights(std::uint32_t sequence_size, std::vector<std::uint32_t>& nodes) {
+
+   std::uint32_t begin_node_id = nodes[0];
+   std::uint32_t end_node_id = nodes[0];
+   for (std::uint32_t i = 0; i < sequence_size-1; ++i) {
+     end_node_id = nodes[i+1];
+     nodes[i] = 0; // if edge is absent
+     for (const auto& edge: nodes_[begin_node_id]->out_edges_) {
+         if (edge->end_node_id_ == end_node_id) {
+             nodes[i] = edge->total_weight_;
+             begin_node_id = end_node_id;
+             break;
+  	}
+      }
+    }
+    return nodes;
+}
+
+// new function added, Vikas Bansal, dec 2020
+std::uint32_t Graph::update_edge(std::uint32_t begin_node_id, std::uint32_t end_node_id,
+    std::int32_t weight) {
+
+    assert(begin_node_id < nodes_.size() && end_node_id < nodes_.size());
+
+    for (const auto& edge: nodes_[begin_node_id]->out_edges_) {
+        if (edge->end_node_id_ == end_node_id) {
+            std::int32_t new_weight = edge->total_weight_ + weight; 
+            if (new_weight > 0) edge->total_weight_ = new_weight; // make sure edge weight doesn't become 0 or negative 
+            return edge->total_weight_;
+	}
+    }
+    return 0; // edge not found
 }
 
 void Graph::add_edge(std::uint32_t begin_node_id, std::uint32_t end_node_id,
