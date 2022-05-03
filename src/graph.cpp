@@ -126,6 +126,7 @@ std::uint32_t Graph::update_edge(std::uint32_t begin_node_id, std::uint32_t end_
 
     for (const auto& edge: nodes_[begin_node_id]->out_edges_) {
         if (edge->end_node_id_ == end_node_id) {
+            //if (edge->total_weight_ < 0) return 0;
             std::int32_t new_weight = edge->total_weight_ + weight; 
             if (new_weight > 0) edge->total_weight_ = new_weight; // make sure edge weight doesn't become 0 or negative 
             return edge->total_weight_;

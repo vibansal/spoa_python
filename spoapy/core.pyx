@@ -325,7 +325,7 @@ cdef class Alignment:
         cdef Alignment self = Alignment.__new__(Alignment)
         self._c_vec = unique_ptr[cspoa.Alignment](new cspoa.Alignment())
         for x, y in pairs:
-            z = pair[uint32_t, uint32_t](x, y)
+            z = pair[int32_t, int32_t](x, y)
             self._c_vec.get().push_back(z)
         return self
 
